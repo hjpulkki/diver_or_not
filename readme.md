@@ -5,3 +5,5 @@ This project contains code which is meant to be used in an underwater Raspberry 
 3. A telegram bot. Can be used to turn the camera on or off, control the device, or view best pictures with a mobile phone.
 
 Most of this code has been written in a tent or in a car with a rpi monitor, so the quality is not always the best possible :)
+
+The initial goal of this project was to detect automatically whether there is a diver in the image or not.
