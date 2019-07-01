@@ -1,0 +1,9 @@
+trash/*
+data/*
+models/*
+pics/*
+__pycache__/*
+.ipynb_checkpoints/*
+Adafruit_Python_BNO055/*
+config.py
+*.pyc
