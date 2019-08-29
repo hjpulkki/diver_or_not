@@ -28,13 +28,24 @@ from keras.applications.mobilenet import preprocess_input
 from keras.applications.mobilenet import decode_predictions
 
 representation_model = 'mobilenet_2'
-trained_model = 'score_model_2.p'
+trained_models = ['score_model_2.p', 'score_model_3.p']
 
 model = MobileNet(weights='imagenet')
 model.layers.pop()  # Remove last layer
 
-model_2 = pickle.load(open("models/{}".format(trained_model), "rb" ))
 features = np.arange(1,1001)   # mobilenet_2
+
+
+def get_model(model_filename):
+    with open("models/{}".format(model_filename), "rb" ) as file:
+        return pickle.load(file)
+
+    
+model_2_dict = {
+    trained_model: get_model(trained_model)
+    for trained_model in trained_models
+}
+
 
 def get_features(filename):
     image = load_img(filename, target_size=(224, 224))
@@ -45,19 +56,14 @@ def get_features(filename):
 
 
 def get_unprocessed_files(conn):
-    # Not needed any more since camera script updates the table directly.
-    # pictures = os.listdir('pics')
-    # pics = pd.DataFrame(pictures, columns=['file'])
-    # pics.to_sql('pictures', conn, if_exists='replace')  # Update pictures table with overwrite.
-
     sql = """
-    SELECT a.file
-    FROM (SELECT DISTINCT file FROM pictures) a
-    LEFT JOIN (SELECT DISTINCT file FROM processed) b
-        ON a.file = b.file
-    WHERE b.file IS NULL
+        SELECT DISTINCT file
+        FROM pictures
+        WHERE file > (SELECT MAX(file) FROM processed)
+        ORDER BY file
     """
     return pd.read_sql(sql, conn)
+
 
 def process_batch(conn):
     unprocessed_files = get_unprocessed_files(conn)
@@ -74,8 +80,14 @@ def process_batch(conn):
     predictions['file'] = unprocessed_files['file']
     predictions['representation_model'] = representation_model
     predictions['prediction'] = None
-    predictions['trained_model'] = trained_model
-
+    
+    predictions_dict = {}
+    
+    for trained_model in trained_models:
+        predictions.copy()
+        predictions['trained_model'] = trained_model
+        predictions_dict[trained_model] = predictions
+        
     for ind, row in unprocessed_files.iterrows():
         filename = row['file']
         try:
@@ -83,16 +95,26 @@ def process_batch(conn):
             with open("data/{}/{}.csv".format(representation_model, filename), "w" ) as f:
                 f.write(filename + "," + ",".join([str(a) for a in representation]) + "\n")
 
-            predictions.loc[ind, 'prediction'] = model_2.predict_proba(
-                representation.reshape(1, -1)
-            )[0,1]
+            for trained_model in trained_models:
+                if trained_model == 'score_model_2.p':
+                    # Classification models
+                    pred = model_2_dict[trained_model].predict_proba(
+                        representation.reshape(1, -1)
+                    )[0,1]
+                else:
+                    # Regression models
+                    pred = model_2_dict[trained_model].predict(representation.reshape(1, -1))
+                    
+                predictions_dict[trained_model].loc[ind, 'prediction'] = pred
 
         except Exception as e:
             print('error processing file', filename)
             print(e)
 
     unprocessed_files.to_sql('processed', conn, if_exists='append')
-    predictions.to_sql('predictions', conn, if_exists='append')
+    
+    for trained_model in trained_models:
+        predictions_dict[trained_model].to_sql('predictions', conn, if_exists='append')
 
 if __name__ == '__main__':
     conn = utils.get_conn()

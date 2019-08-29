@@ -30,9 +30,11 @@ def get_scores():
 	return df[mask]
 
 def show_image(filename):
+    print("/files/diver_or_not/{}{}".format(img_folder, filename))
+    if not os.path.isfile(img_folder + filename):
+        return
     im = cv2.imread(img_folder + filename)
     plt.imshow(im)
-    print("/files/diver_or_not/{}{}".format(img_folder, filename))
     plt.show()
 
 
