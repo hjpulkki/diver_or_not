@@ -86,7 +86,6 @@ def handle(msg):
 
     print ('Received:')
     print(command)
-
     # Comparing the incoming message to send a reply according to it
     if command == '/time':
         bot.sendMessage(chat_id, str("Time: ") + str(now.hour) + str(":") + str(now.minute) + str(":") + str(now.second))
@@ -104,17 +103,18 @@ def handle(msg):
         time = get_time(params)
         picture_generators[user] = get_random(time)
         send_next(user, chat_id)
-    elif command == '/halt':
-        if not authorized:
-            bot.sendMessage(chat_id, 'You are not authorized to use this command. Contact @Heikki for access')
-            return
-        os.system('sudo halt -p')
     elif command == '/os':
         if not authorized:
             bot.sendMessage(chat_id, 'You are not authorized to use this command. Contact @Heikki for access')
             return
         result = subprocess.check_output(params)
         bot.sendMessage(chat_id, result)
+    elif command == '/halt':
+        msg['text'] = '/os sudo halt -p'
+        handle(msg)
+    elif command == '/ip':
+        msg['text'] = '/os hostname -I'
+        handle(msg)
     elif command == '/camera':    # Commands to turn camera on/off.
         if not authorized:
             bot.sendMessage(chat_id, 'You are not authorized to use this command. Contact @Heikki for access')
