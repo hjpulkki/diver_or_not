@@ -17,7 +17,7 @@ previous_pictures = {}
 picture_generators = {}
 
 
-def get_best(time, trained_model='score_model_2.p'):
+def get_best(time, trained_model='score_model_3.p'):
     sql = '''
     SELECT file, prediction
     FROM predictions
