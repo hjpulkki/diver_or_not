@@ -34,6 +34,20 @@ def get_best(time, trained_model='score_model_3.p'):
         yield res[0], description
 
 
+def get_new():
+    sql = '''
+    SELECT file
+    FROM pictures
+    ORDER BY file DESC
+    LIMIT 1000
+    '''
+    all_results = conn.execute(sql).fetchall()
+    print("found", len(all_results), "results")
+    for res in all_results:
+        description = "Picture {}. Rate it from 0 to 10".format(res[0])
+        yield res[0], description
+
+
 def get_random(time):
     sql = '''
     SELECT file, prediction
@@ -97,6 +111,10 @@ def handle(msg):
         bot.sendMessage(chat_id, 'Starting to send pictures. Reply with a number between 0 and 10 to rate them.')
         time = get_time(params)
         picture_generators[user] = get_best(time)
+        send_next(user, chat_id)
+    elif command == '/new':
+        bot.sendMessage(chat_id, 'Starting to send pictures. Reply with a number between 0 and 10 to rate them.')
+        picture_generators[user] = get_new()
         send_next(user, chat_id)
     elif command == '/random':
         bot.sendMessage(chat_id, 'Starting to send pictures. Reply with a number between 0 and 10 to rate them.')
